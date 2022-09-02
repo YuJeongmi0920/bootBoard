@@ -23,9 +23,10 @@
             <tr>
                 <th class="col-1">번호</th>
                 <th class="col-1">제목</th>
-                <th class="col-2">작성자</th>
+                <th class="col-2">내용</th>
                 <th class="col-1">작성일</th>
                 <th class="col-1">조회수</th>
+
             </tr>
             </thead>
             <tbody>

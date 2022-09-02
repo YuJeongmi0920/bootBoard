@@ -1,11 +1,41 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "//mybatis.org/DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
-<!-- 경로 틀리면 시작시 무조건 에러 -->
-
 <mapper namespace="com.project.bootboard.mapper.BoardMapper">
-    <insert id="boardInsert">
-        INSERT INTO board (board_title, board_content, board_date)
-        VALUES (#{boardDto.boardTitle}, #{boardDto.boardContent}, now())
+    <!-- 경로 틀리면 시작시 무조건 에러 -->
+    <resultMap id="board" type="com.project.bootboard.dto.Board">
+        <id property="boardNo" column="boardNo"/>
+        <result property="boardTitle" column="boardTitle"/>
+        <result property="boardContent" column="boardContent"/>
+        <result property="boardDate" column="boardDate"/>
+        <result property="boardRead" column="boardRead"/>
+        <collection property="boardFileList" ofType="string">
+            <result column="fileName"/>
+        </collection>
+    </resultMap>
+
+    <insert id="insertBoard" parameterType="com.project.bootboard.dto.Board" useGeneratedKeys="true"
+            keyColumn="board_no"
+            keyProperty="boardNo">
+        insert into board(
+        <if test="board.boardNo != 0">
+            board_no,
+        </if>
+        board_title,
+        board_content,
+        board_date)
+        values (
+        <if test="board.boardNo != 0">
+            #{board.boardNo},
+        </if>
+        #{board.boardTitle},
+        #{board.boardContent},
+        NOW()) ON DUPLICATE KEY
+
+        UPDATE
+        board_title = #{board.boardTitle},
+        board_content = #{board.boardContent},
+        board_date = NOW()
+
     </insert>
 
     <update id="showUp" parameterType="java.lang.Integer">
@@ -14,12 +44,7 @@
         WHERE board_no = #{boardNo}
     </update>
 
-    <update id="boardUpdate" parameterType="com.project.bootboard.dto.BoardDto">
-        UPDATE board
-        SET board_title   = #{boardDto.boardTitle},
-            board_content = #{boardDto.boardContent}
-        WHERE board_no = #{boardDto.boardNo}
-    </update>
+
 
     <delete id="boardDelete">
         delete
@@ -28,7 +53,7 @@
     </delete>
 
     <!-- id는 메서드명,resultType은 반환타입 -->
-    <select id="getBoardList" resultType="com.project.bootboard.dto.BoardDto">
+    <select id="getBoardList" resultType="com.project.bootboard.dto.Board">
         SELECT board_no      boardNo
              , board_title   boardTitle
              , board_content boardContent
@@ -43,14 +68,23 @@
         FROM board
     </select>
 
-    <select id="boardDetail" resultType="com.project.bootboard.dto.BoardDto">
-        SELECT board_no      boardNo
-             , board_title   boardTitle
-             , board_content boardContent
-             , board_date    boardDate
-        FROM board
-        WHERE board_no = #{boardNo}
+    <select id="boardDetail" resultMap="board">
+        SELECT b.board_no      boardNo
+             , b.board_title   boardTitle
+             , b.board_content boardContent
+             , b.board_date    boardDate
+             , f.file_name     fileName
+        FROM board b
+                 LEFT JOIN boardfile f ON b.board_no = f.board_no
+        WHERE b.board_no = #{boardNo}
+        ORDER BY f.boardfile_no
     </select>
 
 
 </mapper>
+
+        <!--        insert,delete,update 는 어차피 성공한 횟수만 int로 줘서 resultType이 필요없다-->
+        <!--        select는 행의개수 혹은 객체가 될수 있기 때문에 resultType이 필요하다-->
+        <!--        parameterType은 select,insert,delete,update 모두 상황에 따라서 필요하다-->
+        <!--        list,string,dto등등-->
+        <!--        근데 없어도 얼추 알아 먹는다 햇갈리면 parameterType은 무조건 표시해주는게 좋다-->

@@ -1,9 +1,10 @@
 package com.project.bootboard.controller;
 
-import com.project.bootboard.dto.BoardDto;
+import com.project.bootboard.dto.Board;
+import com.project.bootboard.dto.BoardFile;
+import com.project.bootboard.dto.BoardForm;
 import com.project.bootboard.service.BoardService;
 import lombok.RequiredArgsConstructor;
-import lombok.Value;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -33,37 +34,33 @@ public class BoardController {
     // 입력폼
     @GetMapping("/insert-form")
     public String insertForm() {
-        return "/board/board-insert-form";
+        return "/board/insert-form";
     }
 
-    @PostMapping("/insert")// 통으로 받기
-    public String boardInsert(BoardDto boardDto) {
-        log.info("%s", boardDto);
-        boardService.boardInsert(boardDto);
 
-        //리스트로 뿌려줘야 하니까
-        return "redirect:/board/list?check=insert";
+
+    @PostMapping("/insert")
+    public String addBoard(BoardForm boardForm, Model model) {
+        System.out.println(boardForm);
+        boardService.addBoard(boardForm);
+        int boardNo = boardForm.getBoard().getBoardNo();
+        if (boardNo != 0) {
+            model.addAttribute("msg", "입력성공");
+            model.addAttribute("url", "/board/detail?boardNo=" + boardNo);
+            return "/etc/alert";
+        }
+        return "redirect:/board/list";
     }
 
     // 게시판 상세
     @GetMapping("/detail")
     public String boardDetail(@RequestParam("boardNo") int boardNo, Model model) {
         log.info(boardNo);
-        BoardDto boardDto = boardService.boardDetail(boardNo);
-        model.addAttribute("board", boardDto);
+        Board board = boardService.boardDetail(boardNo);
+        model.addAttribute("board", board);
         return "/board/board-detail";
     }
 
-    @PostMapping("/update")
-    public String boardUpdate(BoardDto boardDto, Model model) {
-        log.info(boardDto);
-        boardService.boardUpdate(boardDto);
-
-        // 성공하면 알림 띄워주고 디테일로 감 (파일이 아니라 주소로)
-        model.addAttribute("msg", "수정 성공!");
-        model.addAttribute("url", "/board/detail?boardNo=" + boardDto.getBoardNo());
-        return "/etc/alert";
-    }
 
 
     @GetMapping("/delete")
@@ -73,6 +70,17 @@ public class BoardController {
         model.addAttribute("url", "/board/list");
         return "/etc/alert";
     }
+
+
+    // 주소는 대시케이스로 하자
+    @ResponseBody
+    @PostMapping("/img-delete") // 파라미터 받는법
+    public String boardList(@RequestBody BoardFile boardFile) {
+        System.out.println(boardFile);
+        boardService.fileDelete(boardFile.getFileName());
+        return "ok";
+    }
+
 
 
 }
